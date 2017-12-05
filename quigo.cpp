@@ -25,7 +25,7 @@ Use it to make something cool, have fun, and share what you've learned with othe
 #include<stdlib.h>
 
 //Including Project Files
-#include "gui.cpp"
+#include "tui.cpp"
 #include "users.cpp"
 #include "flights.cpp"
 #include "search.cpp"
