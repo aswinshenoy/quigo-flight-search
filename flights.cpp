@@ -1,9 +1,21 @@
+/*
+	FILENAME : FLIGHTS.CPP
+	DESCRIPTION: File holding the class - FLIGHT, and other functions associated
+	
+*/
+
+/************************************************
+*			   CLASS DEFINITION 	 			*
+*				NAME : FLIGHT					*
+*		 		FILE : FLIGHTS.BIN				*
+************************************************/
+
 class flight
 {
 	float fare;
 	public:
 	int code;
-	float arrival, departure;
+	float arrival, departure; 
 	char airline[5], source[5], dest[5];
 	float getfare(){return fare;}
 	void new_flight();
@@ -12,49 +24,56 @@ class flight
 	void show_flightdetails(int,int);
 };
 
+/* MEMEBER FUNCTION TO ADD NEW FLIGHTS */
 void flight::new_flight()
 {
 	cout<<"Enter Flight Details\n";
 	cout<<"Flight Code: "; cin>>code;
 	cout<<"Airline Code: "; cin>>airline;
 	cout<<"Source: "; cin>>source;
-	cout<<"Departure Time: "; cin>>departure;
+	cout<<"Departure Time(in 24hr) : "; cin>>departure;
 	cout<<"Destination: "; cin>>dest;
-	cout<<"Arrival Time: "; cin>>arrival;
+	cout<<"Arrival Time(in 24hr) : "; cin>>arrival;
 	cout<<"Fare: "; cin>>fare;
 }
 
+/* MEMEBER FUNCTION TO UPDATE FLIGHTS */
 void flight::update_flight()
 {
+	//Flight Code is non-updatable identifier
 	cout<<"Airline Code: "; cin>>airline;
 	cout<<"Source: "; cin>>source;
-	cout<<"Departure Time: "; cin>>departure;
+	cout<<"Departure Time(in 24hr) : "; cin>>departure;
 	cout<<"Destination: "; cin>>dest;
-	cout<<"Arrival Time: "; cin>>arrival;
+	cout<<"Arrival Time(in 24hr) : "; cin>>arrival;
 	cout<<"Fare: "; cin>>fare;
 }
 
+/* MEMEBER FUNCTION TO DISLAY FLIGHTS IN COLUMN WISE */
 void flight::display_flight(int y)
 {
 	gotoxy(2,y); cout<<airline<<code;
 	gotoxy((maxx/6),y); cout<<source;
-	gotoxy((maxx/6)*2,y); prnttime(departure);
+	gotoxy((maxx/6)*2,y); cout<<departure; 
 	gotoxy((maxx/6)*3,y); cout<<dest;
-	gotoxy((maxx/6)*4,y); prnttime(arrival);
+	gotoxy((maxx/6)*4,y); cout<<arrival;   
 	gotoxy((maxx/6)*5,y); cout<<fare;
+	//time is displayed in default int format, for error-detection
 }
 
+/* MEMBER FUNCTION TO SHOW FLIGHT DETAILS IN RESULTS PAGE */
 void flight::show_flightdetails(int x, int y)
 {
-	txy("FLIGHT: ",x,y-7); cout<<airline<<code;
+	txy("CODE: ",x,y-7); cout<<airline<<code;
 	txy("SOURCE: ",x,y-5); cout<<source;
 	txy("DEPARTURE: ",x,y-4); prnttime(departure);
 	txy("DESTINATION: ",x,y-2); cout<<dest;
 	txy("ARRIVAL: ",x,y-1); prnttime(arrival);
 	txy("DURATION: ",x,y+2); cout<<timedif(departure,arrival)<<"hrs";
-	txy("FARE: Rs.",x,y+5); cout<<fare;
+	txy("FARE: Rs.",x,y+3); cout<<fare;
 }
 
+/* FUNCTION TO ADD NEW FLIGHT */
 void add_flight()
 {
 	ofstream fout;
@@ -65,6 +84,7 @@ void add_flight()
 	fout.close();
 }
 
+/* FUNCTION TO EDIT EXISTING FLIGHT INFORMATION */
 void edit_flight()
 {
 	fstream file;
@@ -85,18 +105,32 @@ void edit_flight()
 	file.close();
 }
 
+/* FUNCTION TO DELETE FLIGHT */
 void remove_flight()
 {
 	ifstream fin;
 	ofstream temp;
-	flight f; int fcode;
+	flight f; int fcode, flag=0;
 	fin.open("flights.bin",ios::in|ios::binary);
 	temp.open("temp.bin",ios::out|ios::binary);
 	cout<<"Enter Flight Code: "; cin>>fcode;
 	while(fin.read((char*)&f,sizeof(f)))
 	{
 		if(f.code==fcode)
-		{	cout<<"Deleted "<<f.code<<" successfully"; getch(); }
+		{	
+			cout<<"PRESS ENTER TO CONFIRM DELETION, ANY OTHER KEY TO CANCEL";
+			char ch = getch();
+			clrscr();
+			flag=1;
+			if((int)ch=='13')
+				cout<<"Deleted the flight - "<<f.airline<<f.code<<" successfully";
+			else 
+			{
+				cout<<"The flight was not deleted.";
+				temp.write((char*)&f,sizeof(f));
+			}	
+			getch();
+		}
 		else
 			temp.write((char*)&f,sizeof(f));
 	}
@@ -104,8 +138,10 @@ void remove_flight()
 	fin.close();
 	remove("flights.bin");
 	rename("temp.bin", "flights.bin");
+	if(flag==0) { cout<<"The flight was not found, and not deleted."; }
 }
 
+/* FUNCTION TO DISPLAY ALL FLIGHTS (in admin area) */
 void display_flights()
 {
 	ifstream fin;
@@ -129,12 +165,20 @@ void display_flights()
 	fin.close();
 }
 
+/* FUNCTION TO REMOVE ALL FLIGHTS */
 void reset_flights()
 {
 	remove("flights.bin");
 	cout<<"Sucessfully reset!"; getch();
 }
 
+
+/************************************************
+*			FLIGHT-SORTING FUNCTIONS 			*
+*			ALGORITHM : BINARY SORT				*
+************************************************/
+
+/* SORT DIRECT FLIGHTS BY FARE */
 flight* sortflights_byfare(flight *f, int s)
 {
 	flight temp;
@@ -149,8 +193,30 @@ flight* sortflights_byfare(flight *f, int s)
 		}
 	}
 	return f;
+} 
+ 
+/* SORT CONNECTION FLIGHTS BY FARE */
+flight* sortflights_byfare(flight cf[][2], int c)
+{
+	flight temp[2];
+	for(int i=0; i<c; i++)
+	{
+		for(int j=0; j<(c-1)-i; j++)
+		 {
+			int fare1 = cf[j][1].getfare()+cf[j][0].getfare();
+			int fare2 = cf[j+1][1].getfare()+cf[j+1][0].getfare();
+			if(fare1>fare2)
+			{
+				temp[0]=cf[j][0]; temp[1]=cf[j][1];
+				cf[j][0]=cf[j+1][0]; cf[j][1]=cf[j+1][1];
+				cf[j+1][0]=temp[0]; cf[j+1][1]=temp[1];
+			}
+		 }
+	}
+	return *cf;
 }
 
+/* SORT DIRECT FLIGHTS BY ARRIVAL */
 flight* sortflights_byarrival(flight *f, int s)
 {
 	flight temp;
@@ -167,6 +233,24 @@ flight* sortflights_byarrival(flight *f, int s)
 	return f;
 }
 
+/* SORT CONNECTION FLIGHTS BY ARRIVAL */
+flight* sortflights_byarrival(flight cf[][2], int c)
+{
+	flight temp[2];
+	for(int i=0; i<c; i++)
+	{
+		for(int j=0; j<(c-1)-i; j++)
+			if(cf[j][1].arrival>cf[j+1][1].arrival)
+			{
+				temp[0]=cf[j][0]; temp[1]=cf[j][1];
+				cf[j][0]=cf[j+1][0]; cf[j][1]=cf[j+1][1];
+				cf[j+1][0]=temp[0]; cf[j+1][1]=temp[1];
+			}
+	}
+	return *cf;
+}
+
+/* SORT DIRECT FLIGHTS BY DURATION */
 flight* sortflights_byduration(flight *f, int s)
 {
 	flight temp;
@@ -183,29 +267,22 @@ flight* sortflights_byduration(flight *f, int s)
 	return f;
 }
 
-void display_fsresult(flight cf[2],int stops,int x,int y)
+/* SORT CONNECTION FLIGHTS BY DURATION */
+flight* sortflights_byduration(flight cf[][2], int c)
 {
-	flight *df=cf;
-	if(stops==1)
+	flight temp[2];
+	for(int i=0; i<c; i++)
 	{
-		gotoxy(x+5,y);
-		cout<<cf[0].airline<<cf[0].code<<", "<<cf[1].airline<<cf[1].code;
-		gotoxy(x+25,y); prnttime(cf[0].departure);
-		gotoxy(x+35,y); prnttime(cf[1].arrival);
-		gotoxy(x+45,y);
-		cout<<timedif(cf[0].departure,cf[1].arrival)<<"hrs";
-		gotoxy(x+55,y); cout<<"1 ("<<cf[0].dest<<")";
-		txy("Rs. ",x+65,y); cout<<0;
-		delay(150);
+		for(int j=0; j<(c-1)-i; j++)
+		{	int dur1 = timedif(cf[j][0].departure,cf[j][1].arrival);
+			int dur2 = timedif(cf[j+1][0].departure,cf[j+1][1].arrival);
+			if(dur1>dur2)
+			{
+				temp[0]=cf[j][0]; temp[1]=cf[j][1];
+				cf[j][0]=cf[j+1][0]; cf[j][1]=cf[j+1][1];
+				cf[j+1][0]=temp[0]; cf[j+1][1]=temp[1];
+			}
+		}
 	}
-	else if(stops==0)
-	{
-		txy(df[0].airline,x+5,y); cout<<df[0].code;
-		gotoxy(x+25,y); prnttime(df[0].departure);
-		gotoxy(x+35,y); prnttime(df[0].arrival);
-		gotoxy(x+45,y); cout<<timedif(df[0].departure,df[0].arrival)<<"hrs";
-		gotoxy(x+55,y); cout<<"0";
-		txy("Rs. ",x+65,y); cout<<df[0].getfare();
-		delay(150);
-	}
+	return *cf;
 }
