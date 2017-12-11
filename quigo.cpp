@@ -1,4 +1,4 @@
-\*
+/*
 Project Name: Quigo - Flight Search
 Project URI: https://github.com/aswinshenoy/quigo-flight-search
 Author: Ashwin Shenoy
